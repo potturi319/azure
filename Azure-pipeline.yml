@@ -1,0 +1,34 @@
+# Sample pipeline 
+# This is just to test the ability of a pipeline to execut steps several times 
+ 
+resources: 
+  repositories: 
+  - repository: self 
+    type: git 
+    name: repo-c 
+    trigger: true 
+pool: 
+  vmImage: centos-latest 
+parameters: 
+  - name: testIteration 
+    default: [iterateOnce, iterate] 
+    type: object 
+    values: 
+      - iterate 
+      - noIterate 
+      - maybeIterate 
+variables: 
+  DryRun: false 
+steps: 
+  - checkout: git://MY-PROJECT/repo-b 
+  - ${{each item in parameters.testIteration}}: 
+  - powershell: "Get-ChildItem env: | Out-File env.log " 
+    displayName: 'Save ENV' 
+    env: 
+      AnItem:  ${{replace(item, 'value', 'meow')}} 
+  - powershell: "echo Condition succeeded!" 
+    displayName: 'Check condition' 
+    condition: eq(variables['DryRun'], 'true') 
+  - powershell: "Get-Content env.log" 
+    displayName: 'Print ENV' 
+
